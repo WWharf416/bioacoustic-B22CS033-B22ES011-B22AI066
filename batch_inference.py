@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""Batch inference for 50 audio files in WMW folder.
-
-This script uses a frozen BEATs encoder and a few-shot prototype built from
-the WMW class. It then runs inference on 50 audio files,
-decodes events, and saves CSV predictions and individual F1 scores.
-"""
-
 import argparse
 import os
 import random

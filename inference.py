@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-"""Quick single-file demo for bioacoustic event detection.
-
-This script uses a frozen BEATs encoder and a one/few-shot prototype built from
-one class in DCASE annotations. It then runs inference on one query audio file,
-decodes events, and saves a score plot + CSV predictions.
-
-Typical use:
-  python demo_single_file_inference.py
-  python demo_single_file_inference.py --audio /path/to/query.wav
-"""
-
 import argparse
 import os
 import random
