@@ -1,0 +1,22 @@
+# Data & Datasets
+dcase2024_task5/
+downloads/
+esc50_audio/
+synthetic_bioacoustic/
+
+# Caches
+embed_cache/
+__pycache__/
+
+# Output and Models
+outputs/
+models/
+logs/
+
+# IDE
+.codex/
+.vscode/
+
+# Other environment files
+*.pyc
+.env
