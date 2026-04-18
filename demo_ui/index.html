@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioAcoustic Inference — DCASE 2024 Task 5</title>
+  <meta name="description" content="Interactive demo for bioacoustic event detection using BEATs + Prototypical Networks on DCASE 2024 Task 5.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-effects">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header id="app-header">
+    <div class="header-inner">
+      <div class="logo-group">
+        <div class="logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="40" height="40">
+            <defs>
+              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#6ee7b7"/>
+                <stop offset="100%" style="stop-color:#3b82f6"/>
+              </linearGradient>
+            </defs>
+            <circle cx="20" cy="20" r="18" fill="none" stroke="url(#logoGrad)" stroke-width="2.5"/>
+            <path d="M10 20 Q15 10, 20 20 T30 20" stroke="url(#logoGrad)" stroke-width="2" fill="none"/>
+            <path d="M10 20 Q15 28, 20 20 T30 20" stroke="url(#logoGrad)" stroke-width="1.5" fill="none" opacity="0.5"/>
+          </svg>
+        </div>
+        <div>
+          <h1>BioAcoustic Inference</h1>
+          <p class="subtitle">DCASE 2024 Task 5 · Few-Shot Event Detection</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-model">BEATs Encoder</span>
+        <span class="badge badge-method">Prototypical Network</span>
+        <span class="badge badge-live" id="badge-server">
+          <span class="live-dot"></span>
+          Connecting…
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="app-main">
+
+    <!-- Pipeline Overview -->
+    <section class="section pipeline-overview" id="pipeline-section">
+      <h2 class="section-title">
+        <span class="section-icon">⚡</span>
+        Pipeline Overview
+      </h2>
+      <div class="pipeline-steps">
+        <div class="pipeline-step" data-step="1">
+          <div class="step-number">1</div>
+          <div class="step-icon">🎵</div>
+          <h3>Audio Input</h3>
+          <p>Load & resample query audio to 16 kHz mono</p>
+        </div>
+        <div class="pipeline-connector">
+          <svg viewBox="0 0 40 20" width="40" height="20"><path d="M0 10 H30 M25 5 L30 10 L25 15" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+        </div>
+        <div class="pipeline-step" data-step="2">
+          <div class="step-number">2</div>
+          <div class="step-icon">🧠</div>
+          <h3>BEATs Encode</h3>
+          <p>Extract frame-level embeddings (768-D)</p>
+        </div>
+        <div class="pipeline-connector">
+          <svg viewBox="0 0 40 20" width="40" height="20"><path d="M0 10 H30 M25 5 L30 10 L25 15" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+        </div>
+        <div class="pipeline-step" data-step="3">
+          <div class="step-number">3</div>
+          <div class="step-icon">📐</div>
+          <h3>Prototypical Score</h3>
+          <p>cos(frame, pos) − cos(frame, neg)</p>
+        </div>
+        <div class="pipeline-connector">
+          <svg viewBox="0 0 40 20" width="40" height="20"><path d="M0 10 H30 M25 5 L30 10 L25 15" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+        </div>
+        <div class="pipeline-step" data-step="4">
+          <div class="step-number">4</div>
+          <div class="step-icon">📊</div>
+          <h3>Event Decode</h3>
+          <p>Threshold + median filter → event segments</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Configuration + Demo -->
+    <div class="two-col-layout">
+
+      <!-- Left: Configuration Panel -->
+      <section class="section config-panel" id="config-section">
+        <h2 class="section-title">
+          <span class="section-icon">⚙️</span>
+          Configuration
+        </h2>
+
+        <form id="inference-form" onsubmit="return false;">
+
+          <!-- Class Selection (populated from API) -->
+          <div class="form-group">
+            <label for="class-select">Support Class</label>
+            <div class="select-wrapper">
+              <select id="class-select">
+                <option value="">Loading classes…</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Audio File Selection (populated from API after class is selected) -->
+          <div class="form-group">
+            <label for="audio-select">Query Audio</label>
+            <div class="select-wrapper">
+              <select id="audio-select">
+                <option value="">Select a class first</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Custom Upload -->
+          <div class="form-group">
+            <div id="custom-upload-area" class="upload-area">
+              <input type="file" id="audio-upload" accept=".wav,.mp3,.flac" hidden>
+              <button type="button" class="upload-btn" onclick="document.getElementById('audio-upload').click()">
+                <span class="upload-icon">📁</span>
+                Or upload your own .wav
+              </button>
+              <span id="upload-filename" class="upload-filename"></span>
+            </div>
+          </div>
+
+          <!-- N-Shot -->
+          <div class="form-group">
+            <label for="n-shot-slider">
+              N-Shot Support
+              <span class="param-value" id="n-shot-value">5</span>
+            </label>
+            <input type="range" id="n-shot-slider" min="1" max="10" value="5" step="1">
+            <div class="range-labels"><span>1</span><span>10</span></div>
+          </div>
+
+          <!-- Threshold -->
+          <div class="form-group">
+            <label for="threshold-slider">
+              Threshold
+              <span class="param-value" id="threshold-value">0.0 (adaptive)</span>
+            </label>
+            <input type="range" id="threshold-slider" min="0" max="0.5" value="0" step="0.01">
+            <div class="range-labels"><span>0 (auto)</span><span>0.50</span></div>
+          </div>
+
+          <!-- Median Kernel -->
+          <div class="form-group">
+            <label for="kernel-slider">
+              Median Kernel
+              <span class="param-value" id="kernel-value">13</span>
+            </label>
+            <input type="range" id="kernel-slider" min="3" max="31" value="13" step="2">
+            <div class="range-labels"><span>3</span><span>31</span></div>
+          </div>
+
+          <!-- Max Seconds -->
+          <div class="form-group">
+            <label for="maxsec-slider">
+              Max Seconds
+              <span class="param-value" id="maxsec-value">12.0 s</span>
+            </label>
+            <input type="range" id="maxsec-slider" min="0" max="60" value="12" step="1">
+            <div class="range-labels"><span>0 (full)</span><span>60 s</span></div>
+          </div>
+
+          <!-- Merge Gap -->
+          <div class="form-group">
+            <label for="merge-slider">
+              Merge Gap
+              <span class="param-value" id="merge-value">500 ms</span>
+            </label>
+            <input type="range" id="merge-slider" min="0" max="2000" value="500" step="50">
+            <div class="range-labels"><span>0 ms</span><span>2000 ms</span></div>
+          </div>
+
+          <button type="button" id="run-btn" class="run-button" onclick="runInference()">
+            <span class="run-icon">▶</span>
+            Run Inference
+          </button>
+
+          <!-- CLI Command Preview -->
+          <div class="cli-preview" id="cli-preview">
+            <label>Equivalent CLI</label>
+            <code id="cli-command">python inference.py --class-name WMW --n-shot 5</code>
+          </div>
+
+          <!-- Support Files Preview -->
+          <div class="support-info hidden" id="support-info">
+            <label>Support Files Used</label>
+            <ul id="support-files-list"></ul>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right: Results Panel -->
+      <section class="section results-panel" id="results-section">
+        <h2 class="section-title">
+          <span class="section-icon">📊</span>
+          Results
+        </h2>
+
+        <!-- Status / Loading -->
+        <div id="status-area" class="status-area">
+          <div class="status-idle" id="status-idle">
+            <div class="status-icon-large">🔬</div>
+            <p>Configure parameters and click <strong>Run Inference</strong> to see real results.</p>
+            <p class="status-sub">The first run loads the BEATs model (~10s). Subsequent runs use cached embeddings.</p>
+          </div>
+          <div class="status-loading hidden" id="status-loading">
+            <div class="loader"></div>
+            <p class="loading-label" id="loading-label">Running real inference on the server…</p>
+            <div class="loading-steps" id="loading-steps">
+              <div class="loading-step active" id="lstep-1">
+                <span class="lstep-dot"></span> Loading BEATs encoder…
+              </div>
+              <div class="loading-step" id="lstep-2">
+                <span class="lstep-dot"></span> Building prototypes from support set…
+              </div>
+              <div class="loading-step" id="lstep-3">
+                <span class="lstep-dot"></span> Computing prototypical scores…
+              </div>
+              <div class="loading-step" id="lstep-4">
+                <span class="lstep-dot"></span> Decoding events & computing F1…
+              </div>
+            </div>
+          </div>
+          <div class="status-error hidden" id="status-error">
+            <div class="status-icon-large">⚠️</div>
+            <p class="error-msg" id="error-msg">Something went wrong.</p>
+          </div>
+        </div>
+
+        <!-- Results Content (hidden until inference runs) -->
+        <div id="results-content" class="results-content hidden">
+
+          <!-- Query Info -->
+          <div class="query-info-bar" id="query-info-bar">
+            <span id="query-info-text"></span>
+          </div>
+
+          <!-- Metrics Cards -->
+          <div class="metrics-grid">
+            <div class="metric-card" id="metric-events">
+              <div class="metric-label">Predicted Events</div>
+              <div class="metric-value" id="metric-events-val">—</div>
+            </div>
+            <div class="metric-card" id="metric-gt">
+              <div class="metric-label">Ground Truth Events</div>
+              <div class="metric-value" id="metric-gt-val">—</div>
+            </div>
+            <div class="metric-card metric-highlight" id="metric-f1">
+              <div class="metric-label">F1 Score</div>
+              <div class="metric-value" id="metric-f1-val">—</div>
+            </div>
+            <div class="metric-card" id="metric-thresh">
+              <div class="metric-label">Effective Threshold</div>
+              <div class="metric-value" id="metric-thresh-val">—</div>
+            </div>
+          </div>
+
+          <!-- Score Plot Canvas -->
+          <div class="chart-container">
+            <h3 class="chart-title">Prototypical Similarity Scores</h3>
+            <canvas id="score-chart" width="800" height="280"></canvas>
+            <div class="chart-legend" id="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#6366f1"></span> Raw Score</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#06b6d4"></span> Smoothed</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Threshold</span>
+              <span class="legend-item"><span class="legend-dot" style="background:rgba(16,185,129,0.35)"></span> Predicted</span>
+              <span class="legend-item"><span class="legend-dot" style="background:rgba(251,191,36,0.35)"></span> Ground Truth</span>
+            </div>
+          </div>
+
+          <!-- Events Table -->
+          <div class="events-table-container">
+            <h3 class="chart-title">Detected Events</h3>
+            <table class="events-table" id="events-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Onset (s)</th>
+                  <th>Offset (s)</th>
+                  <th>Duration (s)</th>
+                  <th>Match</th>
+                </tr>
+              </thead>
+              <tbody id="events-tbody">
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Score Statistics -->
+          <div class="stats-panel">
+            <h3 class="chart-title">Score Statistics</h3>
+            <div class="stats-grid" id="stats-grid">
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </div>
+
+    <!-- How It Works -->
+    <section class="section how-it-works" id="how-section">
+      <h2 class="section-title">
+        <span class="section-icon">📖</span>
+        How It Works
+      </h2>
+      <div class="explanation-grid">
+        <div class="explanation-card">
+          <div class="explanation-icon">🔊</div>
+          <h3>Few-Shot Learning</h3>
+          <p>Given just a few annotated audio examples (the <em>support set</em>), the model learns to detect similar bioacoustic events in unseen recordings — no fine-tuning required.</p>
+        </div>
+        <div class="explanation-card">
+          <div class="explanation-icon">🧬</div>
+          <h3>BEATs Encoder</h3>
+          <p>Audio is encoded frame-by-frame using Microsoft's BEATs model, producing 768-dimensional embeddings at ~48 fps (20.83ms per frame).</p>
+        </div>
+        <div class="explanation-card">
+          <div class="explanation-icon">🎯</div>
+          <h3>Prototypical Scoring</h3>
+          <p>Positive and negative prototypes are averaged from support embeddings. Each query frame is scored as <code>cos(frame, pos) − cos(frame, neg)</code>.</p>
+        </div>
+        <div class="explanation-card">
+          <div class="explanation-icon">📈</div>
+          <h3>Event Decoding</h3>
+          <p>Scores are median-filtered, thresholded (adaptively or manually), and consecutive frames above threshold are merged into event segments.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer id="app-footer">
+    <div class="footer-inner">
+      <p>BioAcoustic Inference Demo · B22CS033 · B22ES011 · B22AI066</p>
+      <p class="footer-sub">Built with BEATs + Prototypical Networks · DCASE 2024 Task 5</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
