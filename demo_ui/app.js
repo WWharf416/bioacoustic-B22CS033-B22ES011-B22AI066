@@ -4,11 +4,11 @@
    ============================================================ */
 
 const CLASS_LABELS = {
-  WMW: "Western Marsh Warbler",
-  BV:  "Bearded Vulture",
-  HT:  "Hawaiian Thrush",
-  JD:  "Jumping Dolphin",
-  MT:  "Marbled Teal",
+  WMW: "",
+  BV: "",
+  HT: "",
+  JD: "",
+  MT: "",
 };
 
 // ── State ────────────────────────────────────────────────────
@@ -67,7 +67,7 @@ async function loadClasses() {
       opt.value = cls;
       const label = CLASS_LABELS[cls] || cls;
       const numFiles = classesData[cls].files.length;
-      opt.textContent = `${cls} — ${label} (${numFiles} files)`;
+      opt.textContent = `${cls} — ${label}`;
       sel.appendChild(opt);
     });
 
@@ -125,11 +125,11 @@ function populateAudioFiles() {
 // ── Slider binding ───────────────────────────────────────────
 function initSliders() {
   const sliders = [
-    { id: "n-shot-slider",     display: "n-shot-value",    fmt: v => v },
-    { id: "threshold-slider",  display: "threshold-value",  fmt: v => v == 0 ? "0.0 (adaptive)" : parseFloat(v).toFixed(2) },
-    { id: "kernel-slider",     display: "kernel-value",     fmt: v => v },
-    { id: "maxsec-slider",     display: "maxsec-value",     fmt: v => v == 0 ? "Full audio" : v + " s" },
-    { id: "merge-slider",      display: "merge-value",      fmt: v => v + " ms" },
+    { id: "n-shot-slider", display: "n-shot-value", fmt: v => v },
+    { id: "threshold-slider", display: "threshold-value", fmt: v => v == 0 ? "0.0 (adaptive)" : parseFloat(v).toFixed(2) },
+    { id: "kernel-slider", display: "kernel-value", fmt: v => v },
+    { id: "maxsec-slider", display: "maxsec-value", fmt: v => v == 0 ? "Full audio" : v + " s" },
+    { id: "merge-slider", display: "merge-value", fmt: v => v + " ms" },
   ];
 
   sliders.forEach(({ id, display, fmt }) => {
@@ -340,18 +340,18 @@ function displayResults(result) {
   // Stats grid
   const s = result.stats;
   $("stats-grid").innerHTML = [
-    { label: "Raw Score Min",   value: s.raw_min.toFixed(4) },
-    { label: "Raw Score Max",   value: s.raw_max.toFixed(4) },
-    { label: "Raw Score Mean",  value: s.raw_mean.toFixed(4) },
-    { label: "Raw Score Std",   value: s.raw_std.toFixed(4) },
-    { label: "Smooth Min",      value: s.smooth_min.toFixed(4) },
-    { label: "Smooth Max",      value: s.smooth_max.toFixed(4) },
-    { label: "Smooth Mean",     value: s.smooth_mean.toFixed(4) },
-    { label: "Frames Above θ",  value: `${s.frames_above}/${s.total_frames} (${(100 * s.frames_above / s.total_frames).toFixed(1)}%)` },
-    { label: "Total Frames",    value: s.total_frames },
-    { label: "Hop Size",        value: `${s.hop_ms.toFixed(2)} ms` },
-    { label: "Duration",        value: `${s.duration.toFixed(1)} s` },
-    { label: "Kernel Size",     value: s.kernel_size },
+    { label: "Raw Score Min", value: s.raw_min.toFixed(4) },
+    { label: "Raw Score Max", value: s.raw_max.toFixed(4) },
+    { label: "Raw Score Mean", value: s.raw_mean.toFixed(4) },
+    { label: "Raw Score Std", value: s.raw_std.toFixed(4) },
+    { label: "Smooth Min", value: s.smooth_min.toFixed(4) },
+    { label: "Smooth Max", value: s.smooth_max.toFixed(4) },
+    { label: "Smooth Mean", value: s.smooth_mean.toFixed(4) },
+    { label: "Frames Above θ", value: `${s.frames_above}/${s.total_frames} (${(100 * s.frames_above / s.total_frames).toFixed(1)}%)` },
+    { label: "Total Frames", value: s.total_frames },
+    { label: "Hop Size", value: `${s.hop_ms.toFixed(2)} ms` },
+    { label: "Duration", value: `${s.duration.toFixed(1)} s` },
+    { label: "Kernel Size", value: s.kernel_size },
   ].map(item => `
     <div class="stat-item">
       <div class="stat-label">${item.label}</div>
